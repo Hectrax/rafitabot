@@ -20,6 +20,7 @@
 
 # bot.py — primeras líneas
 import os
+from telegram.ext import ChatMemberHandler
 from dotenv import load_dotenv
 
 # Cargamos el .env con ruta absoluta para evitar problemas
@@ -237,7 +238,70 @@ async def manejar_error(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # ══════════════════════════════════════════════
 # ARRANQUE DEL BOT
 # ══════════════════════════════════════════════
+async def bienvenida_nuevo_miembro(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    """
+    Se activa cuando alguien nuevo entra al grupo.
+    Le envía un mensaje privado explicando qué es RafitaBOT.
+    Si no puede enviar en privado (usuario no ha hablado antes con el bot),
+    lo saluda en el grupo brevemente.
+    """
+    resultado = update.chat_member
+    miembro_nuevo = resultado.new_chat_member
+    miembro_viejo = resultado.old_chat_member
 
+    # Solo actuamos si alguien se UNIÓ (no si salió)
+    if miembro_viejo.status == "left" and miembro_nuevo.status == "member":
+        usuario    = miembro_nuevo.user
+        nombre     = usuario.first_name
+
+        mensaje_privado = (
+            f"👋 ¡Hola, *{nombre}*! Bienvenido/a al grupo de clase.\n\n"
+            f"Soy *RafitaBOT*, el asistente de la clase de 2º SMR 📚\n\n"
+            "━━━━━━━━━━━━━━━━━━━\n"
+            "*¿Qué puedo hacer?*\n\n"
+            "📋 /tareas — Ver las tareas pendientes\n"
+            "📝 /examenes — Ver los exámenes próximos\n"
+            "📅 /semana — Vista semanal completa\n\n"
+            "━━━━━━━━━━━━━━━━━━━\n"
+            "*¿Cómo se añaden tareas?*\n\n"
+            "Las tareas y exámenes se añaden desde el formulario web.\n"
+            "Pídele el enlace al delegado/a.\n\n"
+            "━━━━━━━━━━━━━━━━━━━\n"
+            "_Los recordatorios llegan automáticamente al grupo.\n"
+            "No necesitas hacer nada más_ ✅"
+        )
+
+        mensaje_grupo = (
+            f"👋 ¡Bienvenido/a, *{nombre}*!\n"
+            "_Te he enviado un mensaje privado con info sobre RafitaBOT._"
+        )
+
+        # Intentamos enviar en privado primero
+        try:
+            await context.bot.send_message(
+                chat_id    = usuario.id,
+                text       = mensaje_privado,
+                parse_mode = ParseMode.MARKDOWN
+            )
+            # Si el privado funciona, avisamos en el grupo brevemente
+            await context.bot.send_message(
+                chat_id    = update.effective_chat.id,
+                text       = mensaje_grupo,
+                parse_mode = ParseMode.MARKDOWN
+            )
+        except Exception:
+            # Si no puede enviar privado (usuario nunca habló con el bot)
+            # mandamos el mensaje completo en el grupo
+            await context.bot.send_message(
+                chat_id    = update.effective_chat.id,
+                text       = (
+                    f"👋 ¡Bienvenido/a, *{nombre}*!\n\n"
+                    "Soy *RafitaBOT*, el asistente de la clase 📚\n\n"
+                    "📋 /tareas · 📝 /examenes · 📅 /semana"
+                ),
+                parse_mode = ParseMode.MARKDOWN
+            )
+            
 def main():
     logger.info("🚀 Iniciando RafitaBOT...")
 
@@ -250,14 +314,21 @@ def main():
     app.add_handler(CommandHandler("examenes", cmd_examenes))
     app.add_handler(CommandHandler("semana",   cmd_semana))
     app.add_handler(CommandHandler("ayuda",    cmd_ayuda))
-
+    # Handler de bienvenida — detecta cuando alguien entra al grupo
+    app.add_handler(ChatMemberHandler(
+    bienvenida_nuevo_miembro,
+    ChatMemberHandler.CHAT_MEMBER
+    ))
     # Botones inline
     app.add_handler(CallbackQueryHandler(callback_ver, pattern="^ver\\|"))
 
     app.add_error_handler(manejar_error)
 
     logger.info("✅ RafitaBOT listo. Escuchando mensajes...")
-    app.run_polling(drop_pending_updates=True)
+    app.run_polling(
+    drop_pending_updates=True,
+    allowed_updates=Update.ALL_TYPES
+)
 
 
 if __name__ == "__main__":
