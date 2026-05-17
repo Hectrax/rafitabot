@@ -25,6 +25,8 @@ from dotenv import load_dotenv
 # Cargamos el .env con ruta absoluta para evitar problemas
 load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
 
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+
 # Verificación — debe imprimir el ID del Sheet, no None
 print("DEBUG SHEETS_ID:", os.getenv("SHEETS_DOCUMENT_ID"))
 print("DEBUG TOKEN:", os.getenv("BOT_TOKEN", "")[:20] + "...")
@@ -240,7 +242,7 @@ async def manejar_error(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     logger.info("🚀 Iniciando RafitaBOT...")
 
-    app = ApplicationBuilder().token("8727315451:AAGHHTvfwcKzfEzxp3sUrtja-4HTMHo6nDg").build()
+    app = ApplicationBuilder().token(BOT_TOKEN).build()
 
     # Comandos
     app.add_handler(CommandHandler("start",    cmd_start))
