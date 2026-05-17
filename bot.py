@@ -107,7 +107,6 @@ async def cmd_menu(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def cmd_tareas(update: Update, context: ContextTypes.DEFAULT_TYPE):
     tareas = sheets.leer_tareas()
     
-    doc = cliente.open_by_key("1OFMaCMIYSwP4SK5TzU74-ywoixGI74J-Wx4mZlKGtgg")
     # DEBUG — borrar después
     print(f"DEBUG tareas recibidas: {tareas}")
     print(f"DEBUG cantidad: {len(tareas)}")
